@@ -6,13 +6,17 @@ import Cocoa
 private let PANEL_W: CGFloat = 238
 private let PAD: CGFloat = 12
 private let HISTORY_SWATCH: CGFloat = 22
+private let SWATCH_PREVIEW: CGFloat = 32
+private let TOP_ROW_SPACING: CGFloat = 8
+// Space left for the value label once the preview swatch and row spacing are subtracted.
+private let VALUE_LABEL_WIDTH: CGFloat = PANEL_W - 12 - PAD * 2 - SWATCH_PREVIEW - TOP_ROW_SPACING
 
 class PickerPanel: NSPanel {
 
     private let swatchView = SwatchView()
     private let valueLabel = ClickableLabel(labelWithString: "Pick a color to start")
     private let formatControl = NSSegmentedControl(labels: ColorFormat.allCases.map(\.label), trackingMode: .selectOne, target: nil, action: nil)
-    private let copyFeedbackLabel = label("✓ Copied to clipboard", size: 10, weight: .medium, alpha: 0.8)
+    private let copyToast = CopyToastView()
     private let recentLabel = label("RECENT", size: 9, weight: .semibold, alpha: 0.4)
     private let clearHistoryButton = NSButton(title: "Clear", target: nil, action: nil)
     private let historyStack = NSStackView()
@@ -34,6 +38,7 @@ class PickerPanel: NSPanel {
         backgroundColor = .clear
         isOpaque = false
         hasShadow = true
+        isMovableByWindowBackground = true
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         buildUI()
         refreshHistory()
@@ -57,29 +62,27 @@ class PickerPanel: NSPanel {
         ])
 
         swatchView.translatesAutoresizingMaskIntoConstraints = false
-        swatchView.widthAnchor.constraint(equalToConstant: 32).isActive = true
-        swatchView.heightAnchor.constraint(equalToConstant: 32).isActive = true
+        swatchView.widthAnchor.constraint(equalToConstant: SWATCH_PREVIEW).isActive = true
+        swatchView.heightAnchor.constraint(equalToConstant: SWATCH_PREVIEW).isActive = true
         swatchView.onClick = { [weak self] in self?.copyCurrent() }
 
-        valueLabel.lineBreakMode = .byTruncatingTail
         valueLabel.maximumNumberOfLines = 1
         valueLabel.font = .monospacedSystemFont(ofSize: 12, weight: .medium)
         valueLabel.textColor = NSColor.white.withAlphaComponent(0.9)
         valueLabel.onClick = { [weak self] in self?.copyCurrent() }
+        valueLabel.lineBreakMode = .byClipping
         valueLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         valueLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
         let topRow = NSStackView(views: [swatchView, valueLabel])
         topRow.orientation = .horizontal
         topRow.alignment = .centerY
-        topRow.spacing = 8
+        topRow.spacing = TOP_ROW_SPACING
 
         formatControl.segmentDistribution = .fillEqually
         formatControl.selectedSegment = ColorFormat.allCases.firstIndex(of: ColorPreferences.format) ?? 0
         formatControl.target = self
         formatControl.action = #selector(formatChanged)
-
-        copyFeedbackLabel.alphaValue = 0
 
         clearHistoryButton.bezelStyle = .inline
         clearHistoryButton.isBordered = false
@@ -104,7 +107,6 @@ class PickerPanel: NSPanel {
         let rootStack = NSStackView(views: [
             topRow,
             formatControl,
-            copyFeedbackLabel,
             Divider(),
             historyHeaderRow,
             historyStack,
@@ -124,6 +126,16 @@ class PickerPanel: NSPanel {
             topRow.widthAnchor.constraint(equalTo: rootStack.widthAnchor, constant: -PAD * 2),
             formatControl.widthAnchor.constraint(equalTo: rootStack.widthAnchor, constant: -PAD * 2),
             historyHeaderRow.widthAnchor.constraint(equalTo: rootStack.widthAnchor, constant: -PAD * 2),
+        ])
+
+        // Added last so it renders above the card and everything in it, and lives
+        // outside rootStack so it never reserves its own row height.
+        copyToast.translatesAutoresizingMaskIntoConstraints = false
+        copyToast.alphaValue = 0
+        root.addSubview(copyToast)
+        NSLayoutConstraint.activate([
+            copyToast.centerXAnchor.constraint(equalTo: root.centerXAnchor),
+            copyToast.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -10),
         ])
     }
 
@@ -229,15 +241,26 @@ class PickerPanel: NSPanel {
     private func refreshValueLabel() {
         guard let color = currentColor, let string = ColorFormatter.string(from: color, format: ColorPreferences.format) else { return }
         valueLabel.stringValue = string
+        valueLabel.font = Self.fittedMonospaceFont(for: string, maxWidth: VALUE_LABEL_WIDTH)
+    }
+
+    /// AppKit has no `adjustsFontSizeToFitWidth` (that's UIKit); shrink manually instead
+    /// of letting rgba(...), the longest string this ever shows, get clipped or ellipsized.
+    private static func fittedMonospaceFont(for text: String, maxWidth: CGFloat, maxSize: CGFloat = 12, minSize: CGFloat = 9) -> NSFont {
+        let full = NSFont.monospacedSystemFont(ofSize: maxSize, weight: .medium)
+        let measured = (text as NSString).size(withAttributes: [.font: full]).width
+        guard measured > maxWidth, measured > 0 else { return full }
+        let scaledSize = max(minSize, maxSize * maxWidth / measured)
+        return .monospacedSystemFont(ofSize: scaledSize, weight: .medium)
     }
 
     private func showCopyFeedback() {
         copyFeedbackTimer?.invalidate()
-        copyFeedbackLabel.animator().alphaValue = 1
+        copyToast.animator().alphaValue = 1
         copyFeedbackTimer = Timer.scheduledTimer(withTimeInterval: 1.4, repeats: false) { [weak self] _ in
             NSAnimationContext.runAnimationGroup { ctx in
                 ctx.duration = 0.3
-                self?.copyFeedbackLabel.animator().alphaValue = 0
+                self?.copyToast.animator().alphaValue = 0
             }
         }
     }
@@ -342,6 +365,34 @@ private class ClickableLabel: NSTextField {
     }
 }
 
+/// Floating "Copied" pill overlaid on top of the whole panel — has its own opaque
+/// background since it can appear over any swatch color underneath it.
+private class CopyToastView: NSView {
+    private let label = NSTextField(labelWithString: "✓ Copied")
+
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        label.font = .systemFont(ofSize: 11, weight: .semibold)
+        label.textColor = .white
+        label.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(label)
+        NSLayoutConstraint.activate([
+            label.topAnchor.constraint(equalTo: topAnchor, constant: 6),
+            label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -6),
+            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
+            label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
+        ])
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func draw(_ dirtyRect: NSRect) {
+        let path = NSBezierPath(roundedRect: bounds, xRadius: bounds.height / 2, yRadius: bounds.height / 2)
+        NSColor.black.withAlphaComponent(0.88).setFill()
+        path.fill()
+    }
+}
+
 /// The first tile in the history strip: an empty dashed box with a "+", the only way to start picking a color.
 private class AddSwatchView: NSView {
     var onClick: (() -> Void)?
@@ -372,6 +423,37 @@ private class AddSwatchView: NSView {
     }
 }
 
+/// The hover-revealed delete badge on a history swatch. Draws its own opaque dark
+/// circle behind the × so it stays legible over light swatch colors too — an SF
+/// Symbol tinted white alone let the swatch color show through and vanished on
+/// light backgrounds.
+private class RemoveBadge: NSView {
+    var onClick: (() -> Void)?
+
+    override func draw(_ dirtyRect: NSRect) {
+        let circle = NSBezierPath(ovalIn: bounds)
+        NSColor.black.withAlphaComponent(0.85).setFill()
+        circle.fill()
+
+        let inset = bounds.width * 0.28
+        let x = NSBezierPath()
+        x.move(to: NSPoint(x: inset, y: inset))
+        x.line(to: NSPoint(x: bounds.width - inset, y: bounds.height - inset))
+        x.move(to: NSPoint(x: bounds.width - inset, y: inset))
+        x.line(to: NSPoint(x: inset, y: bounds.height - inset))
+        x.lineWidth = 1.6
+        x.lineCapStyle = .round
+        NSColor.white.setStroke()
+        x.stroke()
+    }
+
+    override func mouseDown(with event: NSEvent) { onClick?() }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .pointingHand)
+    }
+}
+
 /// A small swatch in the recent-colors strip: click to copy, hover to reveal a remove button.
 private class HistorySwatchView: NSView {
     private let color: NSColor
@@ -380,15 +462,7 @@ private class HistorySwatchView: NSView {
     private let onRemove: (String) -> Void
     private var trackingArea: NSTrackingArea?
 
-    private let removeButton: NSButton = {
-        let b = NSButton(image: NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: "Remove")!, target: nil, action: nil)
-        b.bezelStyle = .inline
-        b.isBordered = false
-        b.imageScaling = .scaleProportionallyUpOrDown
-        b.contentTintColor = .white
-        b.isHidden = true
-        return b
-    }()
+    private let removeButton = RemoveBadge()
 
     init(color: NSColor, hex: String, onClick: @escaping (String, NSColor) -> Void, onRemove: @escaping (String) -> Void) {
         self.color = color
@@ -398,8 +472,7 @@ private class HistorySwatchView: NSView {
         super.init(frame: .zero)
         toolTip = hex
         addSubview(removeButton)
-        removeButton.target = self
-        removeButton.action = #selector(removeSelf)
+        removeButton.onClick = { [weak self] in self?.removeSelf() }
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -434,7 +507,7 @@ private class HistorySwatchView: NSView {
         onClick(hex, color)
     }
 
-    @objc private func removeSelf() {
+    private func removeSelf() {
         onRemove(hex)
     }
 

@@ -44,7 +44,10 @@ enum ColorFormatter {
 
     static func rgbaString(from color: NSColor) -> String? {
         guard let c = components(of: color) else { return nil }
-        return "rgba(\(c.r), \(c.g), \(c.b), \(String(format: "%.2f", c.a)))"
+        // Screen-sampled colors are always fully opaque; "1.00" would just be
+        // padding that pushes the string past what the panel can display.
+        let alpha = c.a == 1 ? "1" : String(format: "%.2f", c.a)
+        return "rgba(\(c.r), \(c.g), \(c.b), \(alpha))"
     }
 
     static func string(from color: NSColor, format: ColorFormat) -> String? {
