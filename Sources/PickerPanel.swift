@@ -97,16 +97,18 @@ class PickerPanel: NSPanel {
         formatControl.target = self
         formatControl.action = #selector(formatChanged)
 
-        clearHistoryButton.image = NSImage(systemSymbolName: "trash", accessibilityDescription: "Clear history")
+        let trashConfig = NSImage.SymbolConfiguration(pointSize: 8, weight: .regular)
+        clearHistoryButton.image = NSImage(systemSymbolName: "trash", accessibilityDescription: "Clear history")?
+            .withSymbolConfiguration(trashConfig)
         clearHistoryButton.image?.isTemplate = true
         clearHistoryButton.imagePosition = .imageLeading
         clearHistoryButton.imageScaling = .scaleProportionallyDown
         clearHistoryButton.bezelStyle = .inline
         clearHistoryButton.isBordered = false
-        clearHistoryButton.contentTintColor = NSColor.white.withAlphaComponent(0.45)
+        clearHistoryButton.contentTintColor = NSColor.white.withAlphaComponent(0.4)
         (clearHistoryButton.cell as? NSButtonCell)?.attributedTitle = NSAttributedString(
             string: "Clear",
-            attributes: [.foregroundColor: NSColor.white.withAlphaComponent(0.45), .font: NSFont.systemFont(ofSize: 10, weight: .medium)]
+            attributes: [.foregroundColor: NSColor.white.withAlphaComponent(0.4), .font: NSFont.systemFont(ofSize: 9, weight: .semibold)]
         )
         clearHistoryButton.target = self
         clearHistoryButton.action = #selector(clearHistoryTapped)
