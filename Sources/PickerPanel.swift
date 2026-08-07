@@ -14,11 +14,13 @@ private let VALUE_LABEL_WIDTH: CGFloat = PANEL_W - 12 - PAD * 2 - SWATCH_PREVIEW
 class PickerPanel: NSPanel {
 
     private let swatchView = SwatchView()
-    private let valueLabel = ClickableLabel(labelWithString: "Pick a color to start")
+    private let valueLabel = ClickableLabel(labelWithString: "Pick a color")
     private let formatControl = NSSegmentedControl(labels: ColorFormat.allCases.map(\.label), trackingMode: .selectOne, target: nil, action: nil)
     private let copyToast = CopyToastView()
-    private let recentLabel = label("RECENT", size: 9, weight: .semibold, alpha: 0.4)
+    private let recentLabel = label("Recent", size: 9, weight: .semibold, alpha: 0.4)
     private let clearHistoryButton = NSButton(title: "Clear", target: nil, action: nil)
+    private let historyDivider = Divider()
+    private let historyHeaderRow = NSStackView()
     private let historyStack = NSStackView()
     private var card: CardView!
 
@@ -64,7 +66,14 @@ class PickerPanel: NSPanel {
         swatchView.translatesAutoresizingMaskIntoConstraints = false
         swatchView.widthAnchor.constraint(equalToConstant: SWATCH_PREVIEW).isActive = true
         swatchView.heightAnchor.constraint(equalToConstant: SWATCH_PREVIEW).isActive = true
-        swatchView.onClick = { [weak self] in self?.copyCurrent() }
+        swatchView.onClick = { [weak self] in
+            guard let self else { return }
+            if self.currentColor == nil {
+                self.beginPicking()
+            } else {
+                self.copyCurrent()
+            }
+        }
 
         valueLabel.maximumNumberOfLines = 1
         valueLabel.font = .monospacedSystemFont(ofSize: 12, weight: .medium)
@@ -84,18 +93,25 @@ class PickerPanel: NSPanel {
         formatControl.target = self
         formatControl.action = #selector(formatChanged)
 
+        clearHistoryButton.image = NSImage(systemSymbolName: "trash", accessibilityDescription: "Clear history")
+        clearHistoryButton.image?.isTemplate = true
+        clearHistoryButton.imagePosition = .imageLeading
+        clearHistoryButton.imageScaling = .scaleProportionallyDown
         clearHistoryButton.bezelStyle = .inline
         clearHistoryButton.isBordered = false
+        clearHistoryButton.contentTintColor = NSColor.white.withAlphaComponent(0.45)
         (clearHistoryButton.cell as? NSButtonCell)?.attributedTitle = NSAttributedString(
             string: "Clear",
-            attributes: [.foregroundColor: NSColor.white.withAlphaComponent(0.4), .font: NSFont.systemFont(ofSize: 9, weight: .semibold)]
+            attributes: [.foregroundColor: NSColor.white.withAlphaComponent(0.45), .font: NSFont.systemFont(ofSize: 10, weight: .medium)]
         )
         clearHistoryButton.target = self
         clearHistoryButton.action = #selector(clearHistoryTapped)
 
         let historySpacer = NSView()
         historySpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        let historyHeaderRow = NSStackView(views: [recentLabel, historySpacer, clearHistoryButton])
+        historyHeaderRow.addArrangedSubview(recentLabel)
+        historyHeaderRow.addArrangedSubview(historySpacer)
+        historyHeaderRow.addArrangedSubview(clearHistoryButton)
         historyHeaderRow.orientation = .horizontal
         historyHeaderRow.alignment = .centerY
         historyHeaderRow.spacing = 4
@@ -107,7 +123,7 @@ class PickerPanel: NSPanel {
         let rootStack = NSStackView(views: [
             topRow,
             formatControl,
-            Divider(),
+            historyDivider,
             historyHeaderRow,
             historyStack,
         ])
@@ -213,6 +229,14 @@ class PickerPanel: NSPanel {
 
     @objc private func clearHistoryTapped() {
         ColorPreferences.clearHistory()
+        // Clearing collapses the history section entirely (see refreshHistory), which
+        // would otherwise strand anyone whose current pick still shows on the preview
+        // swatch with no "+" left anywhere to start a new one. Reset back to the same
+        // pristine state as a first launch instead.
+        currentColor = nil
+        swatchView.isEmpty = true
+        valueLabel.stringValue = "Pick a color"
+        valueLabel.font = .monospacedSystemFont(ofSize: 12, weight: .medium)
         refreshHistory()
     }
 
@@ -229,6 +253,7 @@ class PickerPanel: NSPanel {
     private func updateCurrentColor(_ color: NSColor) {
         currentColor = color
         swatchView.color = color
+        swatchView.isEmpty = false
         refreshValueLabel()
 
         if let hex = ColorFormatter.hexString(from: color) {
@@ -271,13 +296,21 @@ class PickerPanel: NSPanel {
             view.removeFromSuperview()
         }
 
+        let items = ColorPreferences.history
+        let isEmpty = items.isEmpty
+        historyDivider.isHidden = isEmpty
+        historyHeaderRow.isHidden = isEmpty
+        historyStack.isHidden = isEmpty
+        guard !isEmpty else {
+            resize()
+            return
+        }
+
         let addTile = AddSwatchView()
         addTile.onClick = { [weak self] in self?.beginPicking() }
         constrainToHistorySize(addTile)
         historyStack.addArrangedSubview(addTile)
 
-        let items = ColorPreferences.history
-        clearHistoryButton.isHidden = items.isEmpty
         for hex in items {
             guard let color = ColorFormatter.color(fromHex: hex) else { continue }
             let swatch = HistorySwatchView(
@@ -287,6 +320,7 @@ class PickerPanel: NSPanel {
                     guard let self else { return }
                     self.currentColor = pickedColor
                     self.swatchView.color = pickedColor
+                    self.swatchView.isEmpty = false
                     self.refreshValueLabel()
                     self.copyCurrent()
                 },
@@ -333,12 +367,20 @@ private class Divider: NSView {
     }
 }
 
-/// The large color preview swatch at the top of the panel — click it to copy.
+/// The large color preview swatch at the top of the panel. Before any color has
+/// been picked this session it shows the same empty "+" tile as the history strip's
+/// add tile and triggers picking when clicked; once a color is set, it shows that
+/// color and copies it when clicked instead.
 private class SwatchView: NSView {
     var color: NSColor = .clear { didSet { needsDisplay = true } }
+    var isEmpty: Bool = true { didSet { needsDisplay = true } }
     var onClick: (() -> Void)?
 
     override func draw(_ dirtyRect: NSRect) {
+        if isEmpty {
+            drawPlusTile(in: bounds, radius: 6)
+            return
+        }
         let path = NSBezierPath(roundedRect: bounds, xRadius: 6, yRadius: 6)
         color.setFill()
         path.fill()
@@ -393,27 +435,33 @@ private class CopyToastView: NSView {
     }
 }
 
+/// Shared look for an empty, dashed "+" tile — used by the history strip's add tile
+/// and by the top preview swatch before any color has been picked.
+private func drawPlusTile(in bounds: NSRect, radius: CGFloat) {
+    let path = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: radius, yRadius: radius)
+    NSColor.white.withAlphaComponent(0.06).setFill()
+    path.fill()
+    NSColor.white.withAlphaComponent(0.25).setStroke()
+    path.lineWidth = 1
+    path.stroke()
+
+    let inset = bounds.width * 0.3
+    let plus = NSBezierPath()
+    plus.move(to: NSPoint(x: bounds.midX, y: inset))
+    plus.line(to: NSPoint(x: bounds.midX, y: bounds.height - inset))
+    plus.move(to: NSPoint(x: inset, y: bounds.midY))
+    plus.line(to: NSPoint(x: bounds.width - inset, y: bounds.midY))
+    plus.lineWidth = 1.5
+    NSColor.white.withAlphaComponent(0.65).setStroke()
+    plus.stroke()
+}
+
 /// The first tile in the history strip: an empty dashed box with a "+", the only way to start picking a color.
 private class AddSwatchView: NSView {
     var onClick: (() -> Void)?
 
     override func draw(_ dirtyRect: NSRect) {
-        let path = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: 4, yRadius: 4)
-        NSColor.white.withAlphaComponent(0.06).setFill()
-        path.fill()
-        NSColor.white.withAlphaComponent(0.25).setStroke()
-        path.lineWidth = 1
-        path.stroke()
-
-        let inset = bounds.width * 0.3
-        let plus = NSBezierPath()
-        plus.move(to: NSPoint(x: bounds.midX, y: inset))
-        plus.line(to: NSPoint(x: bounds.midX, y: bounds.height - inset))
-        plus.move(to: NSPoint(x: inset, y: bounds.midY))
-        plus.line(to: NSPoint(x: bounds.width - inset, y: bounds.midY))
-        plus.lineWidth = 1.5
-        NSColor.white.withAlphaComponent(0.65).setStroke()
-        plus.stroke()
+        drawPlusTile(in: bounds, radius: 4)
     }
 
     override func mouseDown(with event: NSEvent) { onClick?() }

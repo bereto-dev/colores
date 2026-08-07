@@ -7,11 +7,11 @@ A lightweight macOS menu bar color picker — a native Apple Silicon replacement
 **Menu bar:** click the eyedropper icon to open the picker.
 
 **Popup:**
-- Click the dashed **+** tile in the history strip to sample any pixel on screen with macOS's native loupe (`NSColorSampler`)
-- Every pick copies to the clipboard automatically — a "✓ Copied" note flashes to confirm it
+- Click the dashed **+** tile — the top preview before you've picked anything, or the first tile in the history strip afterward — to sample any pixel on screen with macOS's native loupe (`NSColorSampler`)
+- Every pick copies to the clipboard automatically — a "✓ Copied" note flashes over the preview to confirm it
 - Preview swatch + value; click either one (or ⌘C) to copy again in the current format
 - Hex / RGB format toggle — copies automatically the instant you switch formats
-- Recent-colors history: click a swatch to copy it again; hover a swatch and click the **×** in its corner to remove just that one, or **Clear** to wipe the whole strip
+- Recent-colors history: click a swatch to copy it again; hover a swatch and click the **×** in its corner to remove just that one, or **Clear** to wipe the whole strip (the strip stays hidden entirely until you've picked at least one color)
 
 ## How it works
 
