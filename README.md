@@ -2,6 +2,8 @@
 
 A lightweight macOS menu bar color picker — a native Apple Silicon replacement for [Couleurs](https://couleursapp.com/), whose Intel-only binary macOS is dropping support for.
 
+![Colores panel showing a sampled orange swatch, the Hex/RGB toggle, and a recent-colors strip](screenshot.png)
+
 > Running an older version? Compare the number above to the one in **About Colores** (right-click the menu bar icon), then re-download `Colores.app` from this repo if you're behind.
 
 **Menu bar:** click the eyedropper icon to open the picker; click it again to hide it. Once open, it stays floating on top of every other app (and every Space, including full-screen ones) until you close it yourself — nothing you click outside of it will dismiss it, so you can keep it parked on screen while you work and grab colors from it without switching away from your editor. Drag it anywhere by its background; it stays put the next time you reopen it.
