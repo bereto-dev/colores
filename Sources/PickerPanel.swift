@@ -25,8 +25,8 @@ class PickerPanel: NSPanel {
     private var card: CardView!
 
     private var currentColor: NSColor?
-    private var globalClickMonitor: Any?
     private var copyFeedbackTimer: Timer?
+    private var hasBeenPositioned = false
 
     convenience init() {
         self.init(
@@ -36,7 +36,11 @@ class PickerPanel: NSPanel {
             defer: false
         )
         isFloatingPanel = true
-        level = .popUpMenu
+        // .floating (not .popUpMenu) is the level persistent utility palettes use to
+        // stay above other apps' windows indefinitely — this panel is meant to be
+        // left open on screen while working in another app, not dismissed the moment
+        // you click elsewhere.
+        level = .floating
         backgroundColor = .clear
         isOpaque = false
         hasShadow = true
@@ -161,57 +165,38 @@ class PickerPanel: NSPanel {
         setContentSize(NSSize(width: PANEL_W, height: fit.height))
     }
 
-    // MARK: - Show / hide (with click-away dismissal)
+    // MARK: - Show / hide
 
     func present(relativeTo button: NSStatusBarButton) {
-        guard let screen = button.window?.screen ?? NSScreen.main else { return }
-
-        let btnFrame = button.window!.convertToScreen(button.frame)
-        var x = btnFrame.midX - PANEL_W / 2
-        let y = btnFrame.minY - 8
-        x = min(x, screen.visibleFrame.maxX - PANEL_W - 8)
-        x = max(x, screen.visibleFrame.minX + 8)
-
+        // Only auto-position under the menu bar icon the first time this panel is
+        // ever shown. After that, leave it wherever the user last dragged it — this
+        // is meant to stay parked on screen across app switches, so snapping it back
+        // under the icon on every reopen would undo that placement.
+        if !hasBeenPositioned {
+            if let screen = button.window?.screen ?? NSScreen.main {
+                let btnFrame = button.window!.convertToScreen(button.frame)
+                var x = btnFrame.midX - PANEL_W / 2
+                let y = btnFrame.minY - 8
+                x = min(x, screen.visibleFrame.maxX - PANEL_W - 8)
+                x = max(x, screen.visibleFrame.minX + 8)
+                setFrameTopLeftPoint(NSPoint(x: x, y: y))
+            }
+            hasBeenPositioned = true
+        }
         resize()
-        setFrameTopLeftPoint(NSPoint(x: x, y: y))
         orderFrontRegardless()
-        installClickAwayMonitor()
     }
 
     func dismiss() {
         orderOut(nil)
-        removeClickAwayMonitor()
-    }
-
-    private func installClickAwayMonitor() {
-        removeClickAwayMonitor()
-        globalClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
-            self?.dismiss()
-        }
-    }
-
-    private func removeClickAwayMonitor() {
-        if let monitor = globalClickMonitor {
-            NSEvent.removeMonitor(monitor)
-            globalClickMonitor = nil
-        }
     }
 
     // MARK: - Actions
 
     private func beginPicking() {
-        // The sampler's own confirm-click is a real global mouse-down; without
-        // pulling the click-away monitor first, that click would immediately
-        // dismiss this panel instead of landing on the sampled pixel.
-        removeClickAwayMonitor()
         NSColorSampler().show { [weak self] pickedColor in
-            guard let self else { return }
-            if let color = pickedColor {
-                self.updateCurrentColor(color)
-            }
-            if self.isVisible {
-                self.installClickAwayMonitor()
-            }
+            guard let self, let color = pickedColor else { return }
+            self.updateCurrentColor(color)
         }
     }
 

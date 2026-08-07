@@ -4,7 +4,7 @@ A lightweight macOS menu bar color picker — a native Apple Silicon replacement
 
 > Running an older version? Compare the number above to the one in **About Colores** (right-click the menu bar icon), then re-download `Colores.app` from this repo if you're behind.
 
-**Menu bar:** click the eyedropper icon to open the picker.
+**Menu bar:** click the eyedropper icon to open the picker; click it again to hide it. Once open, it stays floating on top of every other app (and every Space, including full-screen ones) until you close it yourself — nothing you click outside of it will dismiss it, so you can keep it parked on screen while you work and grab colors from it without switching away from your editor. Drag it anywhere by its background; it stays put the next time you reopen it.
 
 **Popup:**
 - Click the dashed **+** tile — the top preview before you've picked anything, or the first tile in the history strip afterward — to sample any pixel on screen with macOS's native loupe (`NSColorSampler`)
@@ -17,7 +17,7 @@ A lightweight macOS menu bar color picker — a native Apple Silicon replacement
 
 Screen sampling uses `NSColorSampler`, Apple's own built-in eyedropper/loupe API (the same one behind Digital Color Meter and the system color panel) — available since macOS 10.15, which didn't exist yet when the original Couleurs shipped its own custom loupe. That's the whole reason this can be this small: no custom screen-capture or magnifier code needed.
 
-The picker panel dismisses itself on an outside click, but that dismissal is deliberately paused for the duration of an active sample — otherwise the very click you use to confirm a color on screen would also count as "clicking away" and close the panel before the color registered.
+The panel is a non-activating `NSPanel` at `.floating` window level, which is what lets it sit on top of whatever app you're using without ever stealing keyboard focus from it — clicking a swatch inside Colores doesn't switch you away from your editor. It's positioned under the menu bar icon only the first time it's shown after launch; after that it stays exactly where you last dragged it for as long as the app keeps running (quitting and reopening Colores resets it back under the icon).
 
 ## Requirements
 
