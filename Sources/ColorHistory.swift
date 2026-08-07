@@ -3,7 +3,6 @@ import Foundation
 enum ColorPreferences {
     private static let defaults = UserDefaults.standard
     private static let formatKey = "colorFormat"
-    private static let autoCopyKey = "autoCopyOnPick"
     private static let historyKey = "colorHistory"
     private static let maxHistory = 12
 
@@ -15,11 +14,6 @@ enum ColorPreferences {
             return f
         }
         set { defaults.set(newValue.rawValue, forKey: formatKey) }
-    }
-
-    static var autoCopyOnPick: Bool {
-        get { defaults.object(forKey: autoCopyKey) as? Bool ?? true }
-        set { defaults.set(newValue, forKey: autoCopyKey) }
     }
 
     static var history: [String] {

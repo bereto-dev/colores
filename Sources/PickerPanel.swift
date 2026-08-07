@@ -1,16 +1,15 @@
 import Cocoa
 
-private let PANEL_W: CGFloat = 240
+private let PANEL_W: CGFloat = 260
 private let PAD: CGFloat = 12
+private let HISTORY_SWATCH: CGFloat = 22
 
 class PickerPanel: NSPanel {
 
     private let swatchView = SwatchView()
     private let valueLabel = ClickableLabel(labelWithString: "Pick a color to start")
     private let formatControl = NSSegmentedControl(labels: ColorFormat.allCases.map(\.label), trackingMode: .selectOne, target: nil, action: nil)
-    private let pickButton = NSButton()
-    private let copyButton = NSButton()
-    private let autoCopyCheckbox = NSButton(checkboxWithTitle: "Auto-copy on pick", target: nil, action: nil)
+    private let copyFeedbackLabel = label("✓ Copied to clipboard", size: 10, weight: .medium, alpha: 0.8)
     private let recentLabel = label("RECENT", size: 9, weight: .semibold, alpha: 0.4)
     private let clearHistoryButton = NSButton(title: "Clear", target: nil, action: nil)
     private let historyStack = NSStackView()
@@ -18,6 +17,7 @@ class PickerPanel: NSPanel {
 
     private var currentColor: NSColor?
     private var globalClickMonitor: Any?
+    private var copyFeedbackTimer: Timer?
 
     convenience init() {
         self.init(
@@ -63,6 +63,8 @@ class PickerPanel: NSPanel {
         valueLabel.font = .monospacedSystemFont(ofSize: 12, weight: .medium)
         valueLabel.textColor = NSColor.white.withAlphaComponent(0.9)
         valueLabel.onClick = { [weak self] in self?.copyCurrent() }
+        valueLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        valueLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
         let topRow = NSStackView(views: [swatchView, valueLabel])
         topRow.orientation = .horizontal
@@ -74,31 +76,7 @@ class PickerPanel: NSPanel {
         formatControl.target = self
         formatControl.action = #selector(formatChanged)
 
-        pickButton.title = "Pick Color"
-        pickButton.bezelStyle = .rounded
-        pickButton.target = self
-        pickButton.action = #selector(pickColorTapped)
-        pickButton.setContentHuggingPriority(.defaultLow, for: .horizontal)
-
-        copyButton.title = "Copy"
-        copyButton.bezelStyle = .rounded
-        copyButton.target = self
-        copyButton.action = #selector(copyCurrent)
-        copyButton.isEnabled = false
-
-        let buttonRow = NSStackView(views: [pickButton, copyButton])
-        buttonRow.orientation = .horizontal
-        buttonRow.distribution = .fillEqually
-        buttonRow.spacing = 8
-
-        autoCopyCheckbox.font = .systemFont(ofSize: 11)
-        (autoCopyCheckbox.cell as? NSButtonCell)?.attributedTitle = NSAttributedString(
-            string: "Auto-copy on pick",
-            attributes: [.foregroundColor: NSColor.white.withAlphaComponent(0.8), .font: NSFont.systemFont(ofSize: 11)]
-        )
-        autoCopyCheckbox.state = ColorPreferences.autoCopyOnPick ? .on : .off
-        autoCopyCheckbox.target = self
-        autoCopyCheckbox.action = #selector(autoCopyToggled)
+        copyFeedbackLabel.alphaValue = 0
 
         clearHistoryButton.bezelStyle = .inline
         clearHistoryButton.isBordered = false
@@ -118,13 +96,12 @@ class PickerPanel: NSPanel {
 
         historyStack.orientation = .horizontal
         historyStack.alignment = .centerY
-        historyStack.spacing = 6
+        historyStack.spacing = 8
 
         let rootStack = NSStackView(views: [
             topRow,
             formatControl,
-            buttonRow,
-            autoCopyCheckbox,
+            copyFeedbackLabel,
             Divider(),
             historyHeaderRow,
             historyStack,
@@ -141,8 +118,8 @@ class PickerPanel: NSPanel {
             rootStack.leadingAnchor.constraint(equalTo: card.leadingAnchor),
             rootStack.trailingAnchor.constraint(equalTo: card.trailingAnchor),
             rootStack.bottomAnchor.constraint(equalTo: card.bottomAnchor),
+            topRow.widthAnchor.constraint(equalTo: rootStack.widthAnchor, constant: -PAD * 2),
             formatControl.widthAnchor.constraint(equalTo: rootStack.widthAnchor, constant: -PAD * 2),
-            buttonRow.widthAnchor.constraint(equalTo: rootStack.widthAnchor, constant: -PAD * 2),
             historyHeaderRow.widthAnchor.constraint(equalTo: rootStack.widthAnchor, constant: -PAD * 2),
         ])
     }
@@ -167,9 +144,7 @@ class PickerPanel: NSPanel {
         resize()
         setFrameTopLeftPoint(NSPoint(x: x, y: y))
         orderFrontRegardless()
-
-        // The color selector should already be active the moment the panel appears.
-        beginPicking()
+        installClickAwayMonitor()
     }
 
     func dismiss() {
@@ -193,10 +168,6 @@ class PickerPanel: NSPanel {
 
     // MARK: - Actions
 
-    @objc private func pickColorTapped() {
-        beginPicking()
-    }
-
     private func beginPicking() {
         // The sampler's own confirm-click is a real global mouse-down; without
         // pulling the click-away monitor first, that click would immediately
@@ -219,13 +190,10 @@ class PickerPanel: NSPanel {
         copyCurrent()
     }
 
-    @objc private func autoCopyToggled() {
-        ColorPreferences.autoCopyOnPick = autoCopyCheckbox.state == .on
-    }
-
     @objc private func copyCurrent() {
         guard let color = currentColor, let string = ColorFormatter.string(from: color, format: ColorPreferences.format) else { return }
         PasteboardWriter.copy(string)
+        showCopyFeedback()
     }
 
     @objc private func clearHistoryTapped() {
@@ -246,16 +214,13 @@ class PickerPanel: NSPanel {
     private func updateCurrentColor(_ color: NSColor) {
         currentColor = color
         swatchView.color = color
-        copyButton.isEnabled = true
         refreshValueLabel()
 
         if let hex = ColorFormatter.hexString(from: color) {
             ColorPreferences.pushHistory(hex: hex)
             refreshHistory()
         }
-        if ColorPreferences.autoCopyOnPick {
-            copyCurrent()
-        }
+        copyCurrent()
     }
 
     private func refreshValueLabel() {
@@ -263,11 +228,28 @@ class PickerPanel: NSPanel {
         valueLabel.stringValue = string
     }
 
+    private func showCopyFeedback() {
+        copyFeedbackTimer?.invalidate()
+        copyFeedbackLabel.animator().alphaValue = 1
+        copyFeedbackTimer = Timer.scheduledTimer(withTimeInterval: 1.4, repeats: false) { [weak self] _ in
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.3
+                self?.copyFeedbackLabel.animator().alphaValue = 0
+            }
+        }
+    }
+
     private func refreshHistory() {
         for view in historyStack.arrangedSubviews {
             historyStack.removeArrangedSubview(view)
             view.removeFromSuperview()
         }
+
+        let addTile = AddSwatchView()
+        addTile.onClick = { [weak self] in self?.beginPicking() }
+        constrainToHistorySize(addTile)
+        historyStack.addArrangedSubview(addTile)
+
         let items = ColorPreferences.history
         clearHistoryButton.isHidden = items.isEmpty
         for hex in items {
@@ -279,7 +261,6 @@ class PickerPanel: NSPanel {
                     guard let self else { return }
                     self.currentColor = pickedColor
                     self.swatchView.color = pickedColor
-                    self.copyButton.isEnabled = true
                     self.refreshValueLabel()
                     self.copyCurrent()
                 },
@@ -288,12 +269,16 @@ class PickerPanel: NSPanel {
                     self?.refreshHistory()
                 }
             )
-            swatch.translatesAutoresizingMaskIntoConstraints = false
-            swatch.widthAnchor.constraint(equalToConstant: 18).isActive = true
-            swatch.heightAnchor.constraint(equalToConstant: 18).isActive = true
+            constrainToHistorySize(swatch)
             historyStack.addArrangedSubview(swatch)
         }
         resize()
+    }
+
+    private func constrainToHistorySize(_ view: NSView) {
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.widthAnchor.constraint(equalToConstant: HISTORY_SWATCH).isActive = true
+        view.heightAnchor.constraint(equalToConstant: HISTORY_SWATCH).isActive = true
     }
 }
 
@@ -322,7 +307,7 @@ private class Divider: NSView {
     }
 }
 
-/// The large color preview swatch at the top of the panel — click it to copy, same as the Copy button.
+/// The large color preview swatch at the top of the panel — click it to copy.
 private class SwatchView: NSView {
     var color: NSColor = .clear { didSet { needsDisplay = true } }
     var onClick: (() -> Void)?
@@ -343,7 +328,7 @@ private class SwatchView: NSView {
     }
 }
 
-/// A text label that copies the current color when clicked, same as the Copy button.
+/// A text label that copies the current color when clicked, same as clicking the swatch.
 private class ClickableLabel: NSTextField {
     var onClick: (() -> Void)?
 
@@ -354,12 +339,53 @@ private class ClickableLabel: NSTextField {
     }
 }
 
-/// A small swatch in the recent-colors strip: click to copy, right-click to remove.
+/// The first tile in the history strip: an empty dashed box with a "+", the only way to start picking a color.
+private class AddSwatchView: NSView {
+    var onClick: (() -> Void)?
+
+    override func draw(_ dirtyRect: NSRect) {
+        let path = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: 4, yRadius: 4)
+        NSColor.white.withAlphaComponent(0.06).setFill()
+        path.fill()
+        NSColor.white.withAlphaComponent(0.25).setStroke()
+        path.lineWidth = 1
+        path.stroke()
+
+        let inset = bounds.width * 0.3
+        let plus = NSBezierPath()
+        plus.move(to: NSPoint(x: bounds.midX, y: inset))
+        plus.line(to: NSPoint(x: bounds.midX, y: bounds.height - inset))
+        plus.move(to: NSPoint(x: inset, y: bounds.midY))
+        plus.line(to: NSPoint(x: bounds.width - inset, y: bounds.midY))
+        plus.lineWidth = 1.5
+        NSColor.white.withAlphaComponent(0.65).setStroke()
+        plus.stroke()
+    }
+
+    override func mouseDown(with event: NSEvent) { onClick?() }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .pointingHand)
+    }
+}
+
+/// A small swatch in the recent-colors strip: click to copy, hover to reveal a remove button.
 private class HistorySwatchView: NSView {
     private let color: NSColor
     private let hex: String
     private let onClick: (String, NSColor) -> Void
     private let onRemove: (String) -> Void
+    private var trackingArea: NSTrackingArea?
+
+    private let removeButton: NSButton = {
+        let b = NSButton(image: NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: "Remove")!, target: nil, action: nil)
+        b.bezelStyle = .inline
+        b.isBordered = false
+        b.imageScaling = .scaleProportionallyUpOrDown
+        b.contentTintColor = .white
+        b.isHidden = true
+        return b
+    }()
 
     init(color: NSColor, hex: String, onClick: @escaping (String, NSColor) -> Void, onRemove: @escaping (String) -> Void) {
         self.color = color
@@ -368,6 +394,9 @@ private class HistorySwatchView: NSView {
         self.onRemove = onRemove
         super.init(frame: .zero)
         toolTip = hex
+        addSubview(removeButton)
+        removeButton.target = self
+        removeButton.action = #selector(removeSelf)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -381,16 +410,25 @@ private class HistorySwatchView: NSView {
         path.stroke()
     }
 
-    override func mouseDown(with event: NSEvent) {
-        onClick(hex, color)
+    override func layout() {
+        super.layout()
+        let size: CGFloat = 13
+        removeButton.frame = NSRect(x: bounds.width - size + 4, y: bounds.height - size + 4, width: size, height: size)
     }
 
-    override func rightMouseDown(with event: NSEvent) {
-        let menu = NSMenu()
-        let remove = NSMenuItem(title: "Remove from History", action: #selector(removeSelf), keyEquivalent: "")
-        remove.target = self
-        menu.items = [remove]
-        NSMenu.popUpContextMenu(menu, with: event, for: self)
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let trackingArea { removeTrackingArea(trackingArea) }
+        let area = NSTrackingArea(rect: bounds, options: [.mouseEnteredAndExited, .activeAlways], owner: self, userInfo: nil)
+        addTrackingArea(area)
+        trackingArea = area
+    }
+
+    override func mouseEntered(with event: NSEvent) { removeButton.isHidden = false }
+    override func mouseExited(with event: NSEvent) { removeButton.isHidden = true }
+
+    override func mouseDown(with event: NSEvent) {
+        onClick(hex, color)
     }
 
     @objc private func removeSelf() {

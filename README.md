@@ -4,14 +4,14 @@ A lightweight macOS menu bar color picker — a native Apple Silicon replacement
 
 > Running an older version? Compare the number above to the one in **About Colores** (right-click the menu bar icon), then re-download `Colores.app` from this repo if you're behind.
 
-**Menu bar:** click the eyedropper icon — the picker opens and the screen sampler starts right away, no extra click needed.
+**Menu bar:** click the eyedropper icon to open the picker.
 
 **Popup:**
-- Sample any pixel on screen with macOS's native loupe (`NSColorSampler`)
-- Preview swatch + value; click either one (or the Copy button, or ⌘C) to copy
+- Click the dashed **+** tile in the history strip to sample any pixel on screen with macOS's native loupe (`NSColorSampler`)
+- Every pick copies to the clipboard automatically — a "✓ Copied" note flashes to confirm it
+- Preview swatch + value; click either one (or ⌘C) to copy again in the current format
 - Hex / RGB / RGBA format toggle — copies automatically the instant you switch formats
-- Recent-colors history: click a swatch to copy it again, right-click to remove it, or **Clear** to wipe the whole strip
-- "Auto-copy on pick" — copies the value the moment you sample a color
+- Recent-colors history: click a swatch to copy it again; hover a swatch and click the **×** in its corner to remove just that one, or **Clear** to wipe the whole strip
 
 ## How it works
 
@@ -45,11 +45,15 @@ Because the app isn't signed or notarized (no Apple Developer account needed), m
 
 ## Settings
 
-Right-click the menu bar icon → **Check for Updates…** / **About Colores** / **Quit Colores**. Inside the picker panel: the format toggle (Hex/RGB/RGBA) and the **Auto-copy on pick** checkbox are both remembered between launches (`UserDefaults`), same as the recent-colors history.
+Right-click the menu bar icon → **Check for Updates…** / **About Colores** / **Quit Colores**. Inside the picker panel, the format toggle (Hex/RGB/RGBA) is remembered between launches (`UserDefaults`), same as the recent-colors history.
 
 ## Icon
 
 Using a placeholder icon for now — a proper one is coming later.
+
+## Known limitation
+
+The magnifier's zoom level when sampling is controlled entirely by macOS (`NSColorSampler` exposes no configuration at all — no magnification factor, no pixel size). It can't be made bigger without abandoning the native sampler and building a fully custom loupe from scratch, the way the original Couleurs did. Not planned unless that trade-off is worth it.
 
 ## Out of scope for v1
 
