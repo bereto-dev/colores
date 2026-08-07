@@ -3,13 +3,11 @@ import Cocoa
 enum ColorFormat: String, CaseIterable {
     case hex
     case rgb
-    case rgba
 
     var label: String {
         switch self {
-        case .hex:  return "Hex"
-        case .rgb:  return "RGB"
-        case .rgba: return "RGBA"
+        case .hex: return "Hex"
+        case .rgb: return "RGB"
         }
     }
 }
@@ -19,7 +17,6 @@ enum ColorFormatter {
         let r: Int
         let g: Int
         let b: Int
-        let a: Double
     }
 
     static func components(of color: NSColor) -> Components? {
@@ -27,8 +24,7 @@ enum ColorFormatter {
         return Components(
             r: Int((converted.redComponent * 255).rounded()),
             g: Int((converted.greenComponent * 255).rounded()),
-            b: Int((converted.blueComponent * 255).rounded()),
-            a: Double(converted.alphaComponent)
+            b: Int((converted.blueComponent * 255).rounded())
         )
     }
 
@@ -42,19 +38,10 @@ enum ColorFormatter {
         return "rgb(\(c.r), \(c.g), \(c.b))"
     }
 
-    static func rgbaString(from color: NSColor) -> String? {
-        guard let c = components(of: color) else { return nil }
-        // Screen-sampled colors are always fully opaque; "1.00" would just be
-        // padding that pushes the string past what the panel can display.
-        let alpha = c.a == 1 ? "1" : String(format: "%.2f", c.a)
-        return "rgba(\(c.r), \(c.g), \(c.b), \(alpha))"
-    }
-
     static func string(from color: NSColor, format: ColorFormat) -> String? {
         switch format {
-        case .hex:  return hexString(from: color)
-        case .rgb:  return rgbString(from: color)
-        case .rgba: return rgbaString(from: color)
+        case .hex: return hexString(from: color)
+        case .rgb: return rgbString(from: color)
         }
     }
 

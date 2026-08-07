@@ -10,7 +10,7 @@ A lightweight macOS menu bar color picker — a native Apple Silicon replacement
 - Click the dashed **+** tile in the history strip to sample any pixel on screen with macOS's native loupe (`NSColorSampler`)
 - Every pick copies to the clipboard automatically — a "✓ Copied" note flashes to confirm it
 - Preview swatch + value; click either one (or ⌘C) to copy again in the current format
-- Hex / RGB / RGBA format toggle — copies automatically the instant you switch formats
+- Hex / RGB format toggle — copies automatically the instant you switch formats
 - Recent-colors history: click a swatch to copy it again; hover a swatch and click the **×** in its corner to remove just that one, or **Clear** to wipe the whole strip
 
 ## How it works
@@ -45,7 +45,7 @@ Because the app isn't signed or notarized (no Apple Developer account needed), m
 
 ## Settings
 
-Right-click the menu bar icon → **Check for Updates…** / **About Colores** / **Quit Colores**. Inside the picker panel, the format toggle (Hex/RGB/RGBA) is remembered between launches (`UserDefaults`), same as the recent-colors history.
+Right-click the menu bar icon → **Check for Updates…** / **About Colores** / **Quit Colores**. Inside the picker panel, the format toggle (Hex/RGB) is remembered between launches (`UserDefaults`), same as the recent-colors history.
 
 ## Icon
 
@@ -57,7 +57,7 @@ The magnifier's zoom level when sampling is controlled entirely by macOS (`NSCol
 
 ## Out of scope for v1
 
-Deliberately left out of this rebuild, compared to the original Couleurs: a custom color-format template editor, `NSColor`/`UIColor` Swift/ObjC copy formats, pasting (⌘V) to parse hex/rgba from the clipboard, a global system-wide keyboard shortcut, and Sparkle-style auto-updates (use **Check for Updates…** to jump to this repo instead). All straightforward to add later if needed.
+Deliberately left out of this rebuild, compared to the original Couleurs: a custom color-format template editor, `NSColor`/`UIColor`/`rgba()` copy formats, pasting (⌘V) to parse hex/rgb from the clipboard, a global system-wide keyboard shortcut, and Sparkle-style auto-updates (use **Check for Updates…** to jump to this repo instead). All straightforward to add later if needed.
 
 ## Origin
 

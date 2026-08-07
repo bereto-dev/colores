@@ -1,9 +1,9 @@
 import Cocoa
 
-// Sized so the history row (+ tile plus 6 colors, 7 × HISTORY_SWATCH + 6 × spacing = 202)
+// Sized so the history row (+ tile plus 5 colors, 6 × HISTORY_SWATCH + 5 × spacing = 172)
 // exactly fills the same content width as every other row: card width (PANEL_W - 12
 // for the outer margin) minus PAD on each side.
-private let PANEL_W: CGFloat = 238
+private let PANEL_W: CGFloat = 208
 private let PAD: CGFloat = 12
 private let HISTORY_SWATCH: CGFloat = 22
 private let SWATCH_PREVIEW: CGFloat = 32
@@ -135,7 +135,7 @@ class PickerPanel: NSPanel {
         root.addSubview(copyToast)
         NSLayoutConstraint.activate([
             copyToast.centerXAnchor.constraint(equalTo: root.centerXAnchor),
-            copyToast.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -10),
+            copyToast.topAnchor.constraint(equalTo: card.topAnchor, constant: 10),
         ])
     }
 
@@ -423,27 +423,27 @@ private class AddSwatchView: NSView {
     }
 }
 
-/// The hover-revealed delete badge on a history swatch. Draws its own opaque dark
-/// circle behind the × so it stays legible over light swatch colors too — an SF
-/// Symbol tinted white alone let the swatch color show through and vanished on
+/// The hover-revealed delete badge on a history swatch. Draws its own opaque white
+/// circle behind the × so it stays legible over any swatch color underneath — an
+/// SF Symbol tinted white alone let the swatch color show through and vanished on
 /// light backgrounds.
 private class RemoveBadge: NSView {
     var onClick: (() -> Void)?
 
     override func draw(_ dirtyRect: NSRect) {
         let circle = NSBezierPath(ovalIn: bounds)
-        NSColor.black.withAlphaComponent(0.85).setFill()
+        NSColor.white.setFill()
         circle.fill()
 
-        let inset = bounds.width * 0.28
+        let inset = bounds.width * 0.32
         let x = NSBezierPath()
         x.move(to: NSPoint(x: inset, y: inset))
         x.line(to: NSPoint(x: bounds.width - inset, y: bounds.height - inset))
         x.move(to: NSPoint(x: bounds.width - inset, y: inset))
         x.line(to: NSPoint(x: inset, y: bounds.height - inset))
-        x.lineWidth = 1.6
+        x.lineWidth = 1.3
         x.lineCapStyle = .round
-        NSColor.white.setStroke()
+        NSColor.black.setStroke()
         x.stroke()
     }
 
@@ -471,6 +471,7 @@ private class HistorySwatchView: NSView {
         self.onRemove = onRemove
         super.init(frame: .zero)
         toolTip = hex
+        removeButton.isHidden = true
         addSubview(removeButton)
         removeButton.onClick = { [weak self] in self?.removeSelf() }
     }
@@ -488,8 +489,8 @@ private class HistorySwatchView: NSView {
 
     override func layout() {
         super.layout()
-        let size: CGFloat = 13
-        removeButton.frame = NSRect(x: bounds.width - size + 4, y: bounds.height - size + 4, width: size, height: size)
+        let size: CGFloat = 10
+        removeButton.frame = NSRect(x: bounds.width - size + 3, y: bounds.height - size + 3, width: size, height: size)
     }
 
     override func updateTrackingAreas() {
