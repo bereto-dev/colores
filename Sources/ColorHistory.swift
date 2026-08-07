@@ -4,7 +4,7 @@ enum ColorPreferences {
     private static let defaults = UserDefaults.standard
     private static let formatKey = "colorFormat"
     private static let historyKey = "colorHistory"
-    private static let maxHistory = 12
+    private static let maxHistory = 6
 
     static var format: ColorFormat {
         get {

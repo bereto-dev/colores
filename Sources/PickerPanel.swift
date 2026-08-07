@@ -1,6 +1,9 @@
 import Cocoa
 
-private let PANEL_W: CGFloat = 260
+// Sized so the history row (+ tile plus 6 colors, 7 × HISTORY_SWATCH + 6 × spacing = 202)
+// exactly fills the same content width as every other row: card width (PANEL_W - 12
+// for the outer margin) minus PAD on each side.
+private let PANEL_W: CGFloat = 238
 private let PAD: CGFloat = 12
 private let HISTORY_SWATCH: CGFloat = 22
 
