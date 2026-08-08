@@ -8,6 +8,8 @@ A lightweight macOS menu bar color picker — a native Apple Silicon replacement
 
 **Menu bar:** click the eyedropper icon to open the picker; click it again to hide it. Once open, it stays floating on top of every other app (and every Space, including full-screen ones) until you close it yourself — nothing you click outside of it will dismiss it, so you can keep it parked on screen while you work and grab colors from it without switching away from your editor. Drag it anywhere by its background; it stays put the next time you reopen it.
 
+**Dock icon:** since this is a menu-bar-only app (no Dock tile while running), dragging `Colores.app` onto the Dock yourself gives you a launcher shortcut rather than a live app tile. Clicking it opens the panel directly — on a cold launch and on every click after that, even while Colores is already running in the background.
+
 **Popup:**
 - Click the dashed **+** tile — the top preview before you've picked anything, or the first tile in the history strip afterward — to sample any pixel on screen with macOS's native loupe (`NSColorSampler`)
 - Every pick copies to the clipboard automatically — a "✓ Copied" note flashes over the preview to confirm it

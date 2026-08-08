@@ -30,11 +30,23 @@ class StatusBarController: NSObject {
             return
         }
 
+        showPanel()
+    }
+
+    /// Also called from the Dock icon (a manually-added launcher, since this is an
+    /// LSUIElement app with no Dock tile of its own) via applicationShouldHandleReopen
+    /// and on launch, so clicking it always results in the panel being visible instead
+    /// of just relaunching a process with nothing to show for it.
+    func showPanel() {
         guard let btn = statusItem.button else { return }
         if panel == nil {
             panel = PickerPanel()
         }
-        panel?.present(relativeTo: btn)
+        if panel?.isVisible == true {
+            panel?.orderFrontRegardless()
+        } else {
+            panel?.present(relativeTo: btn)
+        }
     }
 
     private func showContextMenu() {
