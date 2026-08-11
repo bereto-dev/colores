@@ -170,11 +170,13 @@ class PickerPanel: NSPanel {
     // MARK: - Show / hide
 
     func present(relativeTo button: NSStatusBarButton) {
-        // Only auto-position under the menu bar icon the first time this panel is
-        // ever shown. After that, leave it wherever the user last dragged it — this
-        // is meant to stay parked on screen across app switches, so snapping it back
-        // under the icon on every reopen would undo that placement.
-        if !hasBeenPositioned {
+        // Auto-position under the menu bar icon the first time this panel is ever
+        // shown, and also re-anchor it any time its last known position no longer
+        // falls on any currently connected screen — e.g. it was parked on an external
+        // monitor that then got unplugged. Otherwise leave it wherever the user last
+        // dragged it, since it's meant to stay parked on screen across app switches
+        // and snapping it back under the icon on every reopen would undo that.
+        if !hasBeenPositioned || !isOnAnyScreen() {
             if let screen = button.window?.screen ?? NSScreen.main {
                 let btnFrame = button.window!.convertToScreen(button.frame)
                 var x = btnFrame.midX - PANEL_W / 2
@@ -187,6 +189,10 @@ class PickerPanel: NSPanel {
         }
         resize()
         orderFrontRegardless()
+    }
+
+    private func isOnAnyScreen() -> Bool {
+        NSScreen.screens.contains { $0.frame.intersects(frame) }
     }
 
     func dismiss() {
@@ -216,14 +222,6 @@ class PickerPanel: NSPanel {
 
     @objc private func clearHistoryTapped() {
         ColorPreferences.clearHistory()
-        // Clearing collapses the history section entirely (see refreshHistory), which
-        // would otherwise strand anyone whose current pick still shows on the preview
-        // swatch with no "+" left anywhere to start a new one. Reset back to the same
-        // pristine state as a first launch instead.
-        currentColor = nil
-        swatchView.isEmpty = true
-        valueLabel.stringValue = "Pick a color"
-        valueLabel.font = .monospacedSystemFont(ofSize: 12, weight: .medium)
         refreshHistory()
     }
 
@@ -289,6 +287,14 @@ class PickerPanel: NSPanel {
         historyHeaderRow.isHidden = isEmpty
         historyStack.isHidden = isEmpty
         guard !isEmpty else {
+            // No colors left anywhere — whether from Clear or from removing every
+            // swatch one by one — so the add tile that lived in this now-hidden strip
+            // is gone too. Reset the top preview back to its own "+" state so there's
+            // still a way to start picking again, matching a first launch.
+            currentColor = nil
+            swatchView.isEmpty = true
+            valueLabel.stringValue = "Pick a color"
+            valueLabel.font = .monospacedSystemFont(ofSize: 12, weight: .medium)
             resize()
             return
         }
