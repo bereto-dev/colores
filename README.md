@@ -1,4 +1,4 @@
-# Colores (v1.0.0)
+# Colores (v1.1.0)
 
 A lightweight macOS menu bar color picker — a native Apple Silicon replacement for [Couleurs](https://couleursapp.com/), whose Intel-only binary macOS is dropping support for.
 
