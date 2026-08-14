@@ -6,8 +6,6 @@ A lightweight macOS menu bar color picker — a native replacement for [Couleurs
 
 > Running an older version? Compare the number above to the one in **About Colores** (right-click the menu bar icon), then re-download `Colores.app` from this repo if you're behind.
 
-**What's new in 1.2.0:** Colores now ships as a universal binary, so it runs on Intel and Apple Silicon Macs (v1.1.0 was Apple Silicon only and would not open on Intel). The Hex/RGB toggle is redrawn for the dark panel — selected format in `#515153`, unselected darker — so you can tell them apart and both labels stay readable. Minimum macOS is 11.
-
 **Menu bar:** click the eyedropper icon to open the picker; click it again to hide it. Once open, it stays floating on top of every other app (and every Space, including full-screen ones) until you close it yourself — nothing you click outside of it will dismiss it, so you can keep it parked on screen while you work and grab colors from it without switching away from your editor. Drag it anywhere by its background; it stays put the next time you reopen it.
 
 **Dock icon:** since this is a menu-bar-only app (no Dock tile while running), dragging `Colores.app` onto the Dock yourself gives you a launcher shortcut rather than a live app tile. Clicking it opens the panel directly — on a cold launch and on every click after that, even while Colores is already running in the background.
@@ -65,6 +63,20 @@ The magnifier's zoom level when sampling is controlled entirely by macOS (`NSCol
 ## Out of scope for v1
 
 Deliberately left out of this rebuild, compared to the original Couleurs: a custom color-format template editor, `NSColor`/`UIColor`/`rgba()` copy formats, pasting (⌘V) to parse hex/rgb from the clipboard, a global system-wide keyboard shortcut, and Sparkle-style auto-updates (use **Check for Updates…** to jump to this repo instead). All straightforward to add later if needed.
+
+## Changelog
+
+### 1.2.0 — Intel and Apple Silicon
+Colores now ships as a universal binary, so it opens on Intel Macs as well as Apple Silicon. v1.1.0 was Apple Silicon only and would not launch on Intel at all. The Hex/RGB toggle was also redrawn for the dark panel — selected format in `#515153`, unselected darker — so you can tell them apart and both labels stay readable. Requires macOS 11 or later.
+
+### 1.1.0 — Always-on-top panel, Dock launcher, and bug fixes
+- The panel now stays floating on top of every other app instead of dismissing when you click away
+- Clicking a Dock icon you added yourself opens the panel, even if Colores is already running
+- Fixed the picker getting stranded if a monitor was unplugged, or if you cleared the last recent color
+- Dropped the RGBA copy format; Hex and RGB are the two options
+
+### 1.0.0 — First release
+A native Apple Silicon replacement for the discontinued Couleurs app: click the menu bar eyedropper, sample any pixel with macOS's own loupe, and copy Hex or RGB. Recent-colors history and a format toggle, with no custom magnifier code.
 
 ## Origin
 
