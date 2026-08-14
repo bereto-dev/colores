@@ -15,7 +15,7 @@ class PickerPanel: NSPanel {
 
     private let swatchView = SwatchView()
     private let valueLabel = ClickableLabel(labelWithString: "Pick a color")
-    private let formatControl = NSSegmentedControl(labels: ColorFormat.allCases.map(\.label), trackingMode: .selectOne, target: nil, action: nil)
+    private let formatControl = FormatToggle()
     private let copyToast = CopyToastView()
     private let recentLabel = label("Recent", size: 9, weight: .semibold, alpha: 0.4)
     private let clearHistoryButton = NSButton(title: "Clear", target: nil, action: nil)
@@ -92,7 +92,6 @@ class PickerPanel: NSPanel {
         topRow.alignment = .centerY
         topRow.spacing = TOP_ROW_SPACING
 
-        formatControl.segmentDistribution = .fillEqually
         formatControl.selectedSegment = ColorFormat.allCases.firstIndex(of: ColorPreferences.format) ?? 0
         formatControl.target = self
         formatControl.action = #selector(formatChanged)
@@ -336,6 +335,75 @@ class PickerPanel: NSPanel {
 }
 
 // MARK: - Helpers
+
+/// Custom Hex/RGB toggle. NSSegmentedControl's Aqua bezel draws a white selected
+/// pill with dark labels — unreadable on this dark panel, especially on Intel.
+private class FormatToggle: NSControl {
+    private static let activeFill = NSColor(srgbRed: 81 / 255, green: 81 / 255, blue: 83 / 255, alpha: 1) // #515153
+    private static let inactiveFill = NSColor(srgbRed: 42 / 255, green: 42 / 255, blue: 44 / 255, alpha: 1) // #2A2A2C
+    private static let titles = ColorFormat.allCases.map(\.label)
+
+    var selectedSegment: Int = 0 {
+        didSet { if selectedSegment != oldValue { needsDisplay = true } }
+    }
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        isEnabled = true
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override var intrinsicContentSize: NSSize {
+        NSSize(width: NSView.noIntrinsicMetric, height: 24)
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        let count = Self.titles.count
+        let segmentW = bounds.width / CGFloat(count)
+
+        let track = NSBezierPath(roundedRect: bounds, xRadius: 6, yRadius: 6)
+        Self.inactiveFill.setFill()
+        track.fill()
+
+        let selectedRect = NSRect(
+            x: CGFloat(selectedSegment) * segmentW + 1,
+            y: 1,
+            width: segmentW - 2,
+            height: bounds.height - 2
+        )
+        let selected = NSBezierPath(roundedRect: selectedRect, xRadius: 5, yRadius: 5)
+        Self.activeFill.setFill()
+        selected.fill()
+
+        for (i, title) in Self.titles.enumerated() {
+            let isSelected = i == selectedSegment
+            let rect = NSRect(x: CGFloat(i) * segmentW, y: 0, width: segmentW, height: bounds.height)
+            let attrs: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: 11, weight: isSelected ? .semibold : .medium),
+                .foregroundColor: isSelected ? NSColor.white : NSColor.white.withAlphaComponent(0.55),
+            ]
+            let size = title.size(withAttributes: attrs)
+            title.draw(
+                at: NSPoint(x: rect.midX - size.width / 2, y: rect.midY - size.height / 2),
+                withAttributes: attrs
+            )
+        }
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        let loc = convert(event.locationInWindow, from: nil)
+        let count = Self.titles.count
+        let index = min(count - 1, max(0, Int(loc.x / (bounds.width / CGFloat(count)))))
+        selectedSegment = index
+        sendAction(action, to: target)
+        needsDisplay = true
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .pointingHand)
+    }
+}
 
 private func label(_ s: String, size: CGFloat, weight: NSFont.Weight, alpha: CGFloat) -> NSTextField {
     let f = NSTextField(labelWithString: s)

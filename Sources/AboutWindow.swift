@@ -25,7 +25,7 @@ class AboutWindow: NSWindow {
         versionLabel.font = .systemFont(ofSize: 11)
         versionLabel.textColor = .tertiaryLabelColor
 
-        let subtitle = NSTextField(wrappingLabelWithString: "A native Apple Silicon screen color picker.")
+        let subtitle = NSTextField(wrappingLabelWithString: "A native macOS screen color picker for Intel and Apple Silicon.")
         subtitle.font = .systemFont(ofSize: 12)
         subtitle.textColor = .secondaryLabelColor
 
