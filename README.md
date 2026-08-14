@@ -2,7 +2,7 @@
 
 A lightweight macOS menu bar color picker — a native replacement for [Couleurs](https://couleursapp.com/). Ships as a universal binary for Intel and Apple Silicon.
 
-![Colores panel showing a sampled orange swatch, the Hex/RGB toggle, and a recent-colors strip](screenshot.png)
+![Colores menu bar picker showing a sampled gray swatch, the Hex/RGB toggle, and a recent-colors strip](colores_cover.jpg)
 
 > Running an older version? Compare the number above to the one in **About Colores** (right-click the menu bar icon), then re-download from [Gumroad](https://bereto.gumroad.com/l/colores) if you're behind.
 
