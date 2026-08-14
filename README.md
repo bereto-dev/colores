@@ -4,7 +4,7 @@ A lightweight macOS menu bar color picker — a native replacement for [Couleurs
 
 ![Colores panel showing a sampled orange swatch, the Hex/RGB toggle, and a recent-colors strip](screenshot.png)
 
-> Running an older version? Compare the number above to the one in **About Colores** (right-click the menu bar icon), then re-download `Colores.app` from this repo if you're behind.
+> Running an older version? Compare the number above to the one in **About Colores** (right-click the menu bar icon), then re-download from [Gumroad](https://bereto.gumroad.com/l/colores) if you're behind.
 
 **Menu bar:** click the eyedropper icon to open the picker; click it again to hide it. Once open, it stays floating on top of every other app (and every Space, including full-screen ones) until you close it yourself — nothing you click outside of it will dismiss it, so you can keep it parked on screen while you work and grab colors from it without switching away from your editor. Drag it anywhere by its background; it stays put the next time you reopen it.
 
@@ -31,7 +31,9 @@ The panel is a non-activating `NSPanel` at `.floating` window level, which is wh
 
 ## Download & run (no build required)
 
-1. Download `Colores.app` from this repo
+Get `Colores.app` from [Gumroad](https://bereto.gumroad.com/l/colores).
+
+1. Download the app
 2. Move it to your `/Applications` folder
 3. Right-click → **Open** → **Open** (required once to bypass Gatekeeper on unsigned apps)
 
@@ -62,7 +64,7 @@ The magnifier's zoom level when sampling is controlled entirely by macOS (`NSCol
 
 ## Out of scope for v1
 
-Deliberately left out of this rebuild, compared to the original Couleurs: a custom color-format template editor, `NSColor`/`UIColor`/`rgba()` copy formats, pasting (⌘V) to parse hex/rgb from the clipboard, a global system-wide keyboard shortcut, and Sparkle-style auto-updates (use **Check for Updates…** to jump to this repo instead). All straightforward to add later if needed.
+Deliberately left out of this rebuild, compared to the original Couleurs: a custom color-format template editor, `NSColor`/`UIColor`/`rgba()` copy formats, pasting (⌘V) to parse hex/rgb from the clipboard, a global system-wide keyboard shortcut, and Sparkle-style auto-updates (use **Check for Updates…** to jump to [Gumroad](https://bereto.gumroad.com/l/colores) instead). All straightforward to add later if needed.
 
 ## Changelog
 

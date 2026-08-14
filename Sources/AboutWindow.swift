@@ -35,7 +35,7 @@ class AboutWindow: NSWindow {
         originBody.textColor = .secondaryLabelColor
 
         let supportHeader = sectionHeader("SUPPORT")
-        let updatesBtn = linkButton(title: "🔄  Check for Updates", url: "https://github.com/bereto-dev/colores")
+        let updatesBtn = linkButton(title: "🔄  Check for Updates", url: "https://bereto.gumroad.com/l/colores")
         let coffeeBtn = linkButton(title: "☕  Buy Me a Coffee", url: "https://buymeacoffee.com/bereto")
         let devBtn = linkButton(title: "🌐  devteam.partners", url: "https://devteam.partners/about-us")
 
