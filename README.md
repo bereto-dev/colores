@@ -1,4 +1,4 @@
-# Colores (v1.2.0)
+# Colores (v1.2.1)
 
 A lightweight macOS menu bar color picker — a native replacement for [Couleurs](https://couleursapp.com/). Ships as a universal binary for Intel and Apple Silicon.
 
@@ -67,6 +67,9 @@ The magnifier's zoom level when sampling is controlled entirely by macOS (`NSCol
 Deliberately left out of this rebuild, compared to the original Couleurs: a custom color-format template editor, `NSColor`/`UIColor`/`rgba()` copy formats, pasting (⌘V) to parse hex/rgb from the clipboard, a global system-wide keyboard shortcut, and Sparkle-style auto-updates (use **Check for Updates…** to jump to [Gumroad](https://bereto.gumroad.com/l/colores) instead). All straightforward to add later if needed.
 
 ## Changelog
+
+### 1.2.1 — Fix a system freeze while sampling
+Sampling a color could freeze the entire Mac, not just Colores, requiring a hard restart. The panel stays visible above every app and every Space so it can be parked on screen while you work — but that meant it was still on screen, in that same "above everything, everywhere" mode, at the exact moment the system's own screen loupe put up its own full-screen surface. The panel now hides itself for the duration of the sample and comes back once you've picked a color or pressed Esc.
 
 ### 1.2.0 — Intel and Apple Silicon
 Colores now ships as a universal binary, so it opens on Intel Macs as well as Apple Silicon. v1.1.0 was Apple Silicon only and would not launch on Intel at all. The Hex/RGB toggle was also redrawn for the dark panel — selected format in `#515153`, unselected darker — so you can tell them apart and both labels stay readable. Requires macOS 11 or later.
