@@ -201,9 +201,20 @@ class PickerPanel: NSPanel {
     // MARK: - Actions
 
     private func beginPicking() {
+        // Hide the panel for the duration of the sample. It's set to .floating,
+        // canJoinAllSpaces, and fullScreenAuxiliary so it can stay parked on screen
+        // across app switches — but leaving it visible and "above everything,
+        // everywhere" at the same moment NSColorSampler puts up its own full-screen
+        // capture surface is exactly the kind of two-surfaces-fighting-for-the-same-
+        // territory situation that can wedge WindowServer system-wide, not just this
+        // app. It also blocks whatever pixel happens to sit under the panel itself.
+        orderOut(nil)
         NSColorSampler().show { [weak self] pickedColor in
-            guard let self, let color = pickedColor else { return }
-            self.updateCurrentColor(color)
+            guard let self else { return }
+            self.orderFrontRegardless()
+            if let color = pickedColor {
+                self.updateCurrentColor(color)
+            }
         }
     }
 
