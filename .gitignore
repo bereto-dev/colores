@@ -1,3 +1,6 @@
 .DS_Store
 *.swiftmodule
 Colores.app/
+vendor/
+dist/
+brag-output*/

@@ -35,7 +35,12 @@ class AboutWindow: NSWindow {
         originBody.textColor = .secondaryLabelColor
 
         let supportHeader = sectionHeader("SUPPORT")
-        let updatesBtn = linkButton(title: "🔄  Check for Updates", url: "https://bereto.gumroad.com/l/colores")
+        let updatesBtn = NSButton(title: "🔄  Check for Updates", target: self, action: #selector(checkForUpdates))
+        updatesBtn.bezelStyle = .inline
+        updatesBtn.isBordered = false
+        updatesBtn.font = .systemFont(ofSize: 12)
+        updatesBtn.contentTintColor = .linkColor
+        let gumroadBtn = linkButton(title: "🛍️  Colores on Gumroad", url: "https://bereto.gumroad.com/l/colores")
         let coffeeBtn = linkButton(title: "☕  Buy Me a Coffee", url: "https://buymeacoffee.com/bereto")
         let devBtn = linkButton(title: "🌐  bereto.dev", url: "https://bereto.dev")
 
@@ -44,7 +49,7 @@ class AboutWindow: NSWindow {
             div(),
             originHeader, originBody,
             div(),
-            supportHeader, updatesBtn, coffeeBtn, devBtn,
+            supportHeader, updatesBtn, gumroadBtn, coffeeBtn, devBtn,
         ])
         stack.orientation = .vertical
         stack.alignment = .leading
@@ -97,6 +102,10 @@ class AboutWindow: NSWindow {
         b.contentTintColor = .linkColor
         b.identifier = NSUserInterfaceItemIdentifier(url)
         return b
+    }
+
+    @objc private func checkForUpdates() {
+        MainActor.assumeIsolated { Updater.shared.checkForUpdates() }
     }
 
     @objc private func openLink(_ sender: NSButton) {

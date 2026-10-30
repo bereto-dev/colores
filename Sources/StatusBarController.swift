@@ -52,9 +52,16 @@ class StatusBarController: NSObject {
     private func showContextMenu() {
         let menu = NSMenu()
 
-        let updates = NSMenuItem(title: "Check for Updates…", action: #selector(openRepo), keyEquivalent: "")
+        let updates = NSMenuItem(title: "Check for Updates…", action: #selector(checkForUpdates), keyEquivalent: "")
         updates.target = self
         menu.addItem(updates)
+
+        // Colores has no Settings window, so the automatic-check toggle lives here.
+        let autoCheck = NSMenuItem(title: "Check Automatically", action: #selector(toggleAutomaticChecks), keyEquivalent: "")
+        autoCheck.target = self
+        autoCheck.state = MainActor.assumeIsolated { Updater.shared.automaticallyChecks } ? .on : .off
+        menu.addItem(autoCheck)
+        menu.addItem(NSMenuItem.separator())
 
         let about = NSMenuItem(title: "About Colores", action: #selector(showAbout), keyEquivalent: "")
         about.target = self
@@ -68,8 +75,12 @@ class StatusBarController: NSObject {
         statusItem.menu = nil
     }
 
-    @objc private func openRepo() {
-        NSWorkspace.shared.open(URL(string: "https://bereto.gumroad.com/l/colores")!)
+    @objc private func checkForUpdates() {
+        MainActor.assumeIsolated { Updater.shared.checkForUpdates() }
+    }
+
+    @objc private func toggleAutomaticChecks() {
+        MainActor.assumeIsolated { Updater.shared.automaticallyChecks.toggle() }
     }
 
     @objc private func showAbout() {

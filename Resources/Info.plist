@@ -9,9 +9,9 @@
     <key>CFBundleDisplayName</key>
     <string>Colores</string>
     <key>CFBundleVersion</key>
-    <string>4</string>
+    <string>5</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.2.1</string>
+    <string>1.3.0</string>
     <key>CFBundleExecutable</key>
     <string>Colores</string>
     <key>CFBundleIconFile</key>
@@ -28,5 +28,15 @@
     <string>© 2026 Roberto Pacheco</string>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
+    <key>SUAllowsAutomaticUpdates</key>
+    <false/>
+    <key>SUEnableAutomaticChecks</key>
+    <true/>
+    <key>SUFeedURL</key>
+    <string>https://app-updates.bereto.workers.dev/colores/appcast.xml</string>
+    <key>SUPublicEDKey</key>
+    <string>qLMiFNAkLUZHgtEuRlPKjYrhDXNpuxs4fKY6NtSB3RE=</string>
+    <key>SUScheduledCheckInterval</key>
+    <integer>86400</integer>
 </dict>
 </plist>

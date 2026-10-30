@@ -7,6 +7,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
         statusBarController = StatusBarController()
         statusBarController?.showPanel()
+        Updater.shared.start()
+        // Debug: `Colores --check-for-updates` runs a user-initiated update check right away.
+        if CommandLine.arguments.contains("--check-for-updates") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { Updater.shared.checkForUpdates() }
+        }
     }
 
     // Fires when the Dock icon (manually added by the user, since this LSUIElement

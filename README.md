@@ -1,10 +1,10 @@
-# Colores (v1.2.1)
+# Colores (v1.3.0)
 
 A lightweight macOS menu bar color picker — a native replacement for [Couleurs](https://couleursapp.com/). Ships as a universal binary for Intel and Apple Silicon.
 
 ![Colores menu bar picker showing a sampled gray swatch, the Hex/RGB toggle, and a recent-colors strip](colores_cover.jpg)
 
-> Running an older version? Compare the number above to the one in **About Colores** (right-click the menu bar icon), then re-download from [Gumroad](https://bereto.gumroad.com/l/colores) if you're behind.
+> Running an older version? From 1.3.0 on, Colores updates itself: right-click the menu bar icon → **Check for Updates…**. On 1.2.1 or earlier, re-download it once from [Gumroad](https://bereto.gumroad.com/l/colores).
 
 **Menu bar:** click the eyedropper icon to open the picker; click it again to hide it. Once open, it stays floating on top of every other app (and every Space, including full-screen ones) until you close it yourself — nothing you click outside of it will dismiss it, so you can keep it parked on screen while you work and grab colors from it without switching away from your editor. Drag it anywhere by its background; it stays put the next time you reopen it.
 
@@ -16,6 +16,8 @@ A lightweight macOS menu bar color picker — a native replacement for [Couleurs
 - Preview swatch + value; click either one (or ⌘C) to copy again in the current format
 - Hex / RGB format toggle — copies automatically the instant you switch formats
 - Recent-colors history: click a swatch to copy it again; hover a swatch and click the **×** in its corner to remove just that one, or **Clear** to wipe the whole strip (the strip stays hidden entirely until you've picked at least one color)
+
+**Updates:** checks once a day and asks before installing. Every update is signed and verified before it's applied.
 
 ## How it works
 
@@ -52,7 +54,7 @@ Because the app isn't signed or notarized (no Apple Developer account needed), m
 
 ## Settings
 
-Right-click the menu bar icon → **Check for Updates…** / **About Colores** / **Quit Colores**. Inside the picker panel, the format toggle (Hex/RGB) is remembered between launches (`UserDefaults`), same as the recent-colors history.
+Right-click the menu bar icon → **Check for Updates…** / **Check Automatically** (daily update check, on by default) / **About Colores** / **Quit Colores**. Inside the picker panel, the format toggle (Hex/RGB) is remembered between launches (`UserDefaults`), same as the recent-colors history.
 
 ## Icon
 
@@ -64,9 +66,12 @@ The magnifier's zoom level when sampling is controlled entirely by macOS (`NSCol
 
 ## Out of scope for v1
 
-Deliberately left out of this rebuild, compared to the original Couleurs: a custom color-format template editor, `NSColor`/`UIColor`/`rgba()` copy formats, pasting (⌘V) to parse hex/rgb from the clipboard, a global system-wide keyboard shortcut, and Sparkle-style auto-updates (use **Check for Updates…** to jump to [Gumroad](https://bereto.gumroad.com/l/colores) instead). All straightforward to add later if needed.
+Deliberately left out of this rebuild, compared to the original Couleurs: a custom color-format template editor, `NSColor`/`UIColor`/`rgba()` copy formats, pasting (⌘V) to parse hex/rgb from the clipboard, and a global system-wide keyboard shortcut. All straightforward to add later if needed.
 
 ## Changelog
+
+### 1.3.0 — Automatic updates
+Colores now updates itself. Once a day it checks for a new version and, if there is one, shows you what's new with an Install and Relaunch button. You can also check any time from the right-click menu (Check for Updates…), and turn the daily check off with Check Automatically. Updates are signed, so the app only installs versions that really come from me. This is the last version you need to download by hand.
 
 ### 1.2.1 — Fix a system freeze while sampling
 Sampling a color could freeze the entire Mac, not just Colores, requiring a hard restart. The panel stays visible above every app and every Space so it can be parked on screen while you work — but that meant it was still on screen, in that same "above everything, everywhere" mode, at the exact moment the system's own screen loupe put up its own full-screen surface. The panel now hides itself for the duration of the sample and comes back once you've picked a color or pressed Esc.
@@ -97,4 +102,4 @@ Built by [devteam.partners](https://devteam.partners/about-us) 🌐
 
 ---
 
-Built with Swift + AppKit. Universal binary (x86_64 + arm64). No external dependencies.
+Built with Swift + AppKit. Universal binary (x86_64 + arm64). Automatic updates use [Sparkle](https://sparkle-project.org) (downloaded at build time, nothing vendored).
